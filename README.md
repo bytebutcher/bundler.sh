@@ -31,18 +31,38 @@ Options:
 
   -p
     Prompt for a password that will be used to encrypt the bundled scripts.
+```
 
-Examples:
-  # Bundle 'speak.sh', 'quack.sh', and 'moo.sh' into 'babel.sh'.
-  ./bundler.sh -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
-  ./babel.sh speak 'Hello, world!'
-  Hello, world!
+## Examples
 
-  # Bundle password protected 
-  ./bundler.sh -p -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
-  Password: xxx
-  TOKEN=xxx ./babel.sh moo 'Hello, world!'
-  Moo! Moo! Moo! 
+### Create a bundle from a set of bash scripts
+```bash
+# Bundle
+%> ./bundler.sh -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
+
+# Execute bundle
+%> ./babel.sh
+Usage: ./babel.sh [command] [args...]
+
+Available commands:
+  speak
+  moo
+  quack
+
+# Execute specific command in bundle
+%> ./babel.sh speak 'Hello, world!'
+Hello, world!
+```
+
+### Create a password protected bundle 
+```bash
+# Bundle
+%> ./bundler.sh -p -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
+Password: xxx
+
+# Execute password protected bundle
+TOKEN=xxx ./babel.sh moo 'Hello, world!'
+Moo! Moo! Moo! 
 ```
 
 ## License
