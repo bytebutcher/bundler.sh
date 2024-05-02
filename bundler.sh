@@ -176,10 +176,11 @@ for cmd in "${!scripts[@]}"; do
     cat >> "$output_sh" << EOF
   $cmd)
     shift
+    script_name=$(basename "$script_path")
     if [[ \$PASSWORD_PROTECTED == false ]] ; then
-       unzip -p "\$0" "$script_path" 2>/dev/null | bash -s -- "\$@"
+      unzip -p "\$0" "$script_path" 2>/dev/null | exec -a "\$script_name" bash -s -- "\$@"
     else
-       unzip -P \$TOKEN -p "\$0" "$script_path" 2>/dev/null | bash -s -- "\$@"
+      unzip -P \$TOKEN -p "\$0" "$script_path" 2>/dev/null | exec -a "\$script_name" bash -s -- "\$@"
     fi
     exit 0
     ;;
