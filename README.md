@@ -1,6 +1,6 @@
 # bundler.sh
 
-Bundler allows you to bundle multiple shell scripts into a single executable shell script. This makes distribution and execution of multiple scripts as a single file convenient and easy.
+Bundler allows you to bundle multiple shell scripts into a single executable. 
 
 ## Features
 
