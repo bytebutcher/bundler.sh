@@ -15,11 +15,11 @@ git clone https://github.com/bytebutcher/bundler.sh.git && cd bundler.sh && chmo
 ```
 
 ## Usage
-```bash
+```
 Usage: ./bundler.sh [OPTIONS]
 
 Description:
-  Bundles multiple shell scripts into a single executable shell script.
+  Bundles multiple shell scripts into a single executable.
   This allows for easy distribution and execution of multiple scripts as a single file.
 
 Options:
