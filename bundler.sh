@@ -1,7 +1,5 @@
 #!/bin/bash
 
-
-
 # Check if the 'zip' command is available
 if ! command -v zip &> /dev/null; then
     echo "Error: 'zip' command not found. Please make sure it is installed and in your PATH." >&2
@@ -18,8 +16,7 @@ usage() {
 Usage: $0 [OPTIONS]
 
 Description:
-  Bundles multiple shell scripts into a single executable shell script.
-  This allows for easy distribution and execution of multiple scripts as a single file.
+  Bundles multiple shell scripts into a single executable.
 
 Options:
   -f COMMAND:SCRIPT_PATH,...
@@ -32,11 +29,26 @@ Options:
     Prompt for a password that will be used to encrypt the bundled scripts.
 
 Examples:
-  # Bundle 'speak.sh', 'quack.sh', and 'moo.sh' into 'babel.sh'.
-  $0 -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
+  # Create a bundle from a set of bash scripts
+  \$ $0 -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
+  
+  # Execute bundle
+  \$ ./babel.sh speak 'Hello, world!'
+  Hello, world!
 
-  # Execute the 'speak' command within 'babel.sh'.
-  ./babel.sh speak 'Hello, world!'
+  # Create a password protected bundle
+  \$ $0 -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh -p
+  Password: xxx
+
+  # Execute password protected bundle (interactive password prompt)
+  \$ ./babel.sh quack 'Hello, world!'
+  Password: xxx
+  Quack! Quack!
+
+  # Execute password protected bundle (supply password via environment variable)
+  \$ TOKEN=xxx ./babel.sh moo 'Hello, world!'
+  Moo! Moo!
+
 EOF
         exit 1
     fi
@@ -121,7 +133,7 @@ output_sh="$temp_dir/output.sh"
 cat > "$output_sh" << EOF
 #!/bin/bash
 
-PASSWORD_PROTECTED=${password:+true}false
+PASSWORD_PROTECTED=$use_password
 
 usage() {
     echo "Usage: \$0 [command] [args...]" >&2
@@ -150,6 +162,11 @@ if [ $# -eq 0 ]; then
     usage
 fi
 
+if [[ $PASSWORD_PROTECTED == true ]] && [ -z $TOKEN ] ; then
+    read -s -p "Password: " TOKEN
+    echo >&2
+fi
+
 case "$1" in
 EOF
 
@@ -159,11 +176,8 @@ for cmd in "${!scripts[@]}"; do
     cat >> "$output_sh" << EOF
   $cmd)
     shift
-    if [ "\$PASSWORD_PROTECTED" == "false" ]; then
+    if [[ \$PASSWORD_PROTECTED == false ]] ; then
        unzip -p "\$0" "$script_path" 2>/dev/null | bash -s -- "\$@"
-    elif [ -z \$TOKEN ]; then
-       echo "Error: Password required but not provided."
-       exit 1
     else
        unzip -P \$TOKEN -p "\$0" "$script_path" 2>/dev/null | bash -s -- "\$@"
     fi
