@@ -20,7 +20,6 @@ Usage: ./bundler.sh [OPTIONS]
 
 Description:
   Bundles multiple shell scripts into a single executable.
-  This allows for easy distribution and execution of multiple scripts as a single file.
 
 Options:
   -f COMMAND:SCRIPT_PATH,...
@@ -38,10 +37,10 @@ Options:
 ### Create a bundle from a set of bash scripts
 ```bash
 # Bundle
-%> ./bundler.sh -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
+$ ./bundler.sh -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
 
 # Execute bundle
-%> ./babel.sh
+$ ./babel.sh
 Usage: ./babel.sh [command] [args...]
 
 Available commands:
@@ -50,19 +49,24 @@ Available commands:
   quack
 
 # Execute specific command in bundle
-%> ./babel.sh speak 'Hello, world!'
+$ ./babel.sh speak 'Hello, world!'
 Hello, world!
 ```
 
 ### Create a password protected bundle 
 ```bash
 # Bundle
-%> ./bundler.sh -p -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
+$ ./bundler.sh -p -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
 Password: xxx
 
-# Execute password protected bundle
-TOKEN=xxx ./babel.sh moo 'Hello, world!'
-Moo! Moo! Moo! 
+# Execute password protected bundle (interactive password prompt)
+$ ./babel.sh quack 'Hello, world!'
+Password: xxx
+Quack! Quack!
+
+# Execute password protected bundle (supply password via environment variable)
+$ TOKEN=xxx ./babel.sh moo 'Hello, world!'
+Moo! Moo!
 ```
 
 ## License
