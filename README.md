@@ -35,9 +35,14 @@ Options:
 Examples:
   # Bundle 'speak.sh', 'quack.sh', and 'moo.sh' into 'babel.sh'.
   ./bundler.sh -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
-
-  # Execute the 'speak' command within 'babel.sh'.
   ./babel.sh speak 'Hello, world!'
+  Hello, world!
+
+  # Bundle password protected 
+  ./bundler.sh -p -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
+  Password: xxx
+  TOKEN=xxx ./babel.sh moo 'Hello, world!'
+  Moo! Moo! Moo! 
 ```
 
 ## License
