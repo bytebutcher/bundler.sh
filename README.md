@@ -22,7 +22,7 @@ Description:
   Bundles multiple shell scripts into a single executable.
 
 Options:
-  -f COMMAND:SCRIPT_PATH,...
+  -s COMMAND:SCRIPT_PATH,...
     Specify a comma-separated list of command:script_path pairs to include in the bundle.
 
   -o OUTPUT_SCRIPT
@@ -37,7 +37,7 @@ Options:
 ### Create a bundle from a set of bash scripts
 ```bash
 # Bundle
-$ ./bundler.sh -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
+$ ./bundler.sh -s speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
 
 # Execute bundle
 $ ./babel.sh
@@ -56,7 +56,7 @@ Hello, world!
 ### Create a password protected bundle 
 ```bash
 # Bundle
-$ ./bundler.sh -p -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
+$ ./bundler.sh -p -s speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
 Password: xxx
 
 # Execute password protected bundle (interactive password prompt)
