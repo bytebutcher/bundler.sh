@@ -1,4 +1,15 @@
 #!/bin/bash
+# ##################################################
+# NAME:
+#   bundler.sh
+# DESCRIPTION:
+#   Bundle multiple shell scripts into a single 
+#   executable. 
+# AUTHOR:
+#   bytebutcher
+# ##################################################
+
+APP_NAME="$(basename "${BASH_SOURCE}")"
 
 # Check if the 'zip' command is available
 if ! command -v zip &> /dev/null; then
@@ -8,8 +19,8 @@ fi
 
 usage() {
     if [[ "$1" == "-v" ]]; then
-        echo "Usage: $0 [OPTION]..."
-        echo "Try '$0 -h' for more information."
+        echo "Usage: $APP_NAME [OPTION]..."
+        echo "Try '$APP_NAME -h' for more information."
         exit 1
     else
         cat <<EOF >&2
@@ -19,7 +30,7 @@ Description:
   Bundles multiple shell scripts into a single executable.
 
 Options:
-  -f COMMAND:SCRIPT_PATH,...
+  -s COMMAND:SCRIPT_PATH,...
     Specify a comma-separated list of command:script_path pairs to include in the bundle.
 
   -o OUTPUT_SCRIPT
@@ -30,14 +41,14 @@ Options:
 
 Examples:
   # Create a bundle from a set of bash scripts
-  \$ $0 -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
+  \$ $0 -s speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
   
   # Execute bundle
   \$ ./babel.sh speak 'Hello, world!'
   Hello, world!
 
   # Create a password protected bundle
-  \$ $0 -f speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh -p
+  \$ $0 -s speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh -p
   Password: xxx
 
   # Execute password protected bundle (interactive password prompt)
@@ -62,9 +73,9 @@ if [[ $# -eq 0 ]]; then
 fi
 
 # Parse arguments
-while getopts "f:o:ph" opt; do
+while getopts "s:o:ph" opt; do
     case "$opt" in
-        f) IFS=',' read -r -a pairs <<< "$OPTARG"
+        s) IFS=',' read -r -a pairs <<< "$OPTARG"
            declare -A scripts
            for pair in "${pairs[@]}"; do
                IFS=':' read -r key value <<< "$pair"
@@ -132,7 +143,6 @@ fi
 output_sh="$temp_dir/output.sh"
 cat > "$output_sh" << EOF
 #!/bin/bash
-
 PASSWORD_PROTECTED=$use_password
 
 usage() {
