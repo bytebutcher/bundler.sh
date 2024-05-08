@@ -152,6 +152,7 @@ fi
 output_sh="$temp_dir/output.sh"
 cat > "$output_sh" << EOF
 #!/bin/bash
+BUNDLED_SCRIPT_PATH=\$(readlink -f "\${BASH_SOURCE[0]}")
 PASSWORD_PROTECTED=$use_password
 
 usage() {
@@ -186,6 +187,8 @@ if [[ $PASSWORD_PROTECTED == true ]] && [ -z $TOKEN ] ; then
     echo >&2
 fi
 
+# Allow bundled scripts to reference the main script's location.
+export BUNDLED_SCRIPT_PATH
 case "$1" in
 EOF
 
