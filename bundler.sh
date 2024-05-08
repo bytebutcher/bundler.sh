@@ -24,7 +24,7 @@ usage() {
         exit 1
     else
         cat <<EOF >&2
-Usage: $0 [OPTIONS]
+Usage: $APP_NAME [OPTIONS]
 
 Description:
   Bundles multiple shell scripts into a single executable.
@@ -47,14 +47,14 @@ Options:
 
 Examples:
   # Create a bundle from a set of bash scripts
-  \$ $0 -s speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
+  \$ $APP_NAME -s speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh
   
   # Execute bundle
   \$ ./babel.sh speak 'Hello, world!'
   Hello, world!
 
   # Create a password protected bundle
-  \$ $0 -s speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh -p
+  \$ $APP_NAME -s speak:speak.sh,quack:quack.sh,moo:moo.sh -o babel.sh -p
   Password: xxx
 
   # Execute password protected bundle (interactive password prompt)
