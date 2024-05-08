@@ -36,8 +36,14 @@ Options:
   -o OUTPUT_SCRIPT
     Specify the filename for the generated executable bundle.
 
+  -f
+    Force overwriting the output file if it already exists.
+
   -p
     Prompt for a password that will be used to encrypt the bundled scripts.
+
+  -h
+    Display this help message and exit.
 
 Examples:
   # Create a bundle from a set of bash scripts
@@ -65,6 +71,7 @@ EOF
     fi
 }
 
+force_output=false
 use_password=false
 
 # Show short usage, if no parameters where supplied
@@ -73,7 +80,7 @@ if [[ $# -eq 0 ]]; then
 fi
 
 # Parse arguments
-while getopts "s:o:ph" opt; do
+while getopts "s:o:phf" opt; do
     case "$opt" in
         s) IFS=',' read -r -a pairs <<< "$OPTARG"
            declare -A scripts
@@ -83,6 +90,8 @@ while getopts "s:o:ph" opt; do
            done
            ;;
         o) output="$OPTARG"
+           ;;
+        f) force_output=true 
            ;;
         p) use_password=true
            ;;
@@ -95,27 +104,27 @@ done
 
 # Check if any script file was specified
 if [ ${#scripts[@]} -eq 0 ]; then
-    echo "Error: No script files specified" >&2
+    echo "Error: No script files specified." >&2
     exit 1
 fi
 
 # Check if each script file exists
 for script_file in "${scripts[@]}"; do
     if [[ ! -f "$script_file" ]]; then
-        echo "Error: Script file '$script_file' does not exist" >&2
+        echo "Error: Script file '$script_file' does not exist." >&2
         exit 1
     fi
 done
 
 # Check if output file is set
 if [[ -z "$output" ]]; then
-    echo "Error: Output file not specified" >&2
+    echo "Error: Output file not specified." >&2
     usage -v
 fi
 
 # Check if output file already exists
-if [[ -e "$output" ]]; then
-    echo "Error: Output file '$output' already exists" >&2
+if [[ -e "$output" ]] && [[ $force_output == false ]] ; then
+    echo "Error: Output file '$output' already exists. Use -f to force overwriting." >&2
     exit 1
 fi
 
@@ -128,7 +137,7 @@ fi
 # Create a temporary directory
 temp_dir=$(mktemp -d)
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to create temporary directory using mktemp -d" >&2
+    echo "Error: Failed to create temporary directory." >&2
     exit 1
 fi
 
