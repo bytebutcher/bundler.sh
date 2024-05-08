@@ -28,8 +28,14 @@ Options:
   -o OUTPUT_SCRIPT
     Specify the filename for the generated executable bundle.
 
+  -f
+    Force overwriting the output file if it already exists.
+
   -p
     Prompt for a password that will be used to encrypt the bundled scripts.
+
+  -h
+    Display this help message and exit.
 ```
 
 ## Examples
