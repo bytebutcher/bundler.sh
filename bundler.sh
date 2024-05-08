@@ -108,12 +108,23 @@ if [ ${#scripts[@]} -eq 0 ]; then
     exit 1
 fi
 
-# Check if each script file exists
+# Check if each script file exists and fulfills constraints
+declare -A filename_check
 for script_file in "${scripts[@]}"; do
     if [[ ! -f "$script_file" ]]; then
         echo "Error: Script file '$script_file' does not exist." >&2
         exit 1
     fi
+    filename=$(basename "$script_file")
+    if [[ "$filename" == "entrypoint.sh" ]]; then
+        echo "Error: The filename 'entrypoint.sh' is reserved and cannot be used." >&2
+        exit 1
+    fi
+    if [[ -n "${filename_check[$filename]}" ]]; then
+        echo "Error: Duplicate filename '$filename' detected. Filenames must be unique." >&2
+        exit 1
+    fi
+    filename_check[$filename]=1
 done
 
 # Check if output file is set
@@ -141,82 +152,120 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Create a zip file of the scripts in the temporary directory
-if [[ -n "$password" ]]; then
-    zip -P "$password" -q "$temp_dir/$output.zip" "${scripts[@]}"
-else
-    zip -q "$temp_dir/$output.zip" "${scripts[@]}"
-fi
+# Copy script to the temporary directory and update array
+for key in "${!scripts[@]}"; do
+    script_path="${scripts[$key]}"
+    filename=$(basename "$script_path")
+    cp "$script_path" "$temp_dir/$filename"
+    scripts[$key]="$filename"
+done
 
-# Create the runner script in the temporary directory
-output_sh="$temp_dir/output.sh"
-cat > "$output_sh" << EOF
+# Create the entrypoint script in the temporary directory
+entrypoint_sh="$temp_dir/entrypoint.sh"
+cat > "$entrypoint_sh" << EOF
 #!/bin/bash
-BUNDLED_SCRIPT_PATH=\$(readlink -f "\${BASH_SOURCE[0]}")
-PASSWORD_PROTECTED=$use_password
+# Specification of the available scripts
+declare -A scripts
+EOF
 
+# Start the serialization of the associative array
+for cmd in "${!scripts[@]}"; do
+    script_path="${scripts[$cmd]}"
+    printf "scripts[%q]=%q\n" "$cmd" "$script_path" >> "$entrypoint_sh"
+done
+
+cat >> "$entrypoint_sh" << 'EOF'
+BUNDLED_SCRIPT_NAME=$(basename "$BUNDLED_SCRIPT_PATH")
 usage() {
-    echo "Usage: \$0 [command] [args...]" >&2
+    echo "Usage: $BUNDLED_SCRIPT_NAME [command] [args...]" >&2
     echo "" >&2
     echo "Available commands:" >&2
 EOF
 
 # Append available commands to the usage information
 for cmd in "${!scripts[@]}"; do
-    echo "    echo \"  $cmd\" >&2" >> "$output_sh"
+    echo "    echo \"  $cmd\" >&2" >> "$entrypoint_sh"
 done
 
-cat >> "$output_sh" << 'EOF'
+cat >> "$entrypoint_sh" << 'EOF'
     echo "" >&2
     exit 1
 }
-
-# Check if the 'unzip' command is available
-if ! command -v unzip &> /dev/null; then
-    echo "Error: 'unzip' command not found. Please make sure it is installed and in your PATH." >&2
-    exit 1
-fi
 
 # Check if any arguments were provided
 if [ $# -eq 0 ]; then
     usage
 fi
 
+# Check if the command is valid and exists in the scripts array
+if [[ -n "${scripts[$1]}" ]]; then
+    cmd=$1
+    script_path=${scripts[$cmd]}
+    shift
+    execute_bundled_script "$script_path" "$@"
+    exit 0
+else
+    echo "Invalid command: $1" >&2
+    usage
+fi
+EOF
+
+# Create the runner script in the temporary directory
+output_sh="$temp_dir/output.sh"
+cat > "$output_sh" << EOF
+#!/bin/bash
+
+# Allow bundled scripts to reference the main script's location
+export BUNDLED_SCRIPT_PATH=\$(readlink -f "\${BASH_SOURCE[0]}")
+
+# Specifies whether the bundled scripts are password proteced.
+export PASSWORD_PROTECTED=$use_password
+
+EOF
+
+cat >> "$output_sh" << 'EOF'
+# Checks if the 'unzip' command is available
+if ! command -v unzip &> /dev/null; then
+    echo "Error: 'unzip' command not found. Please make sure it is installed and in your PATH." >&2
+    exit 1
+fi
+
+# Prompts for a password if bundle is password protected
 if [[ $PASSWORD_PROTECTED == true ]] && [ -z $TOKEN ] ; then
     read -s -p "Password: " TOKEN
     echo >&2
 fi
 
-# Allow bundled scripts to reference the main script's location.
-export BUNDLED_SCRIPT_PATH
-case "$1" in
-EOF
-
-# Append case entries for each command
-for cmd in "${!scripts[@]}"; do
-    script_path=${scripts[$cmd]}
-    cat >> "$output_sh" << EOF
-  $cmd)
+# Execute bundled script. This function can also be called from a bundled script. 
+execute_bundled_script() {
+    local script_path="$1"
+    local script_name=$(basename "$script_path")
     shift
-    script_name=$(basename "$script_path")
-    if [[ \$PASSWORD_PROTECTED == false ]] ; then
-      unzip -p "\$0" "$script_path" 2>/dev/null | exec -a "\$script_name" bash -s -- "\$@"
+    if [[ $PASSWORD_PROTECTED == false ]]; then
+        unzip -p "$BUNDLED_SCRIPT_PATH" "$script_path" 2>/dev/null | exec -a "$script_name" bash -s -- "$@"
     else
-      unzip -P \$TOKEN -p "\$0" "$script_path" 2>/dev/null | exec -a "\$script_name" bash -s -- "\$@"
+        unzip -P $TOKEN -p "$BUNDLED_SCRIPT_PATH" "$script_path" 2>/dev/null | exec -a "$script_name" bash -s -- "$@"
     fi
-    exit 0
-    ;;
-EOF
-done
+}
+export -f execute_bundled_script
 
-# Close the case statement with an error default
-cat >> "$output_sh" << 'EOF'
-  *)
-    echo "Invalid command: $1" >&2
-    usage
-    ;;
-esac
 EOF
+
+cat >> "$output_sh" << EOF
+# Call entrypoint showing program usage and redirecting program flow to bundled scripts
+execute_bundled_script "entrypoint.sh" "\$@"
+exit \$?
+EOF
+
+# Create a zip file of the scripts in the temporary directory
+cd $temp_dir
+scripts[entrypoint]="entrypoint.sh"
+if [[ -n "$password" ]]; then
+    zip -P "$password" -q "$output.zip" "${scripts[@]}"
+else
+    zip -q "$output.zip" "${scripts[@]}"
+fi
+cd - &>/dev/null
 
 # Bundle the runner script and the zip file into the final script
 cat "$output_sh" "$temp_dir/$output.zip" > "$output"
